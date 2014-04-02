@@ -48,23 +48,16 @@ class Species(object):
         return d
 
 
-def initialise_env(size, species_list, hetero, trait_0=None):
-    env = {}
+def initialise_env(size, n, hetero, trait_0=None):
+    species_list = [(Species(i, 0)) for i in range(n)]
+    species = np.random.choice(species_list, size=size)
 
-    # Species
-    env['s'] = np.random.choice(species_list, size=size)
-
-    # Traits
     if hetero:
-        env['t'] = np.random.uniform(0.0, 1.0, size=size)
+        traits = np.random.uniform(0.0, 1.0, size=size)
     else:
         trait_0 = 0.5
-        env['t'] = np.ones([size], dtype=np.float) * trait_0
-    return env
-
-
-def initialise_species_list(n):
-    return [(Species(i, 0)) for i in range(n)]
+        traits = np.ones([size], dtype=np.float) * trait_0
+    return species, traits
 
 
 def eco(m, n, t_max, pn=0.0, hetero=False, out=None, seed=None):
@@ -90,46 +83,41 @@ def eco(m, n, t_max, pn=0.0, hetero=False, out=None, seed=None):
     # Initialise time
     t = 0
 
-    species_list = initialise_species_list(n)
-    env = initialise_env(m, species_list, hetero)
+    species, traits = initialise_env(m, n, hetero)
 
     # Output static system data
     if out is not None:
         if not os.path.isdir(out):
             os.makedirs(os.path.join(out, 'dyn'))
-        np.savez(os.path.join(out, 'static.npz'), traits=env['t'])
+        np.savez(os.path.join(out, 'static.npz'), traits=traits)
 
     # Start main simulation loop
     while t < t_max:
         # How suitable the species in each location are to be in all other
         # locations
-        suits = np.array([s.response(env['t']) for s in env['s']])
+        suits = np.array([s.response(traits) for s in species])
         # Normalise to form probability distribution
         suits /= suits.sum(axis=0)
 
         # Array to hold new environment species state
-        s_new = np.empty([m], dtype=Species)
+        species_new = np.empty([m], dtype=Species)
 
         # For each location
         for i in range(m):
             # Either introduce new species
             if np.random.uniform() < pn:
                 # Make a new species with a new unique name
-                species_new = Species(len(species_list) + 1, t)
-                # Add to the master species list
-                species_list.append(s_new)
+                species_new[i] = Species(len(set(species)), t)
             # Otherwise species expands from within the system
             else:
                 i_species_new = np.random.choice(m, p=suits[:, i])
-                species_new = env['s'][i_species_new]
+                species_new[i] = species[i_species_new]
 
-            s_new[i] = species_new
-
-        env['s'] = s_new
+        species = species_new
 
         if out is not None:
             fname = os.path.join(out, 'dyn', '{:010d}'.format(t))
-            np.savez(fname, species=env['s'], t=t)
+            np.savez(fname, species=species, t=t)
 
         print(t)
 
