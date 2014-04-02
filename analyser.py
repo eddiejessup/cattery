@@ -1,4 +1,4 @@
-import wellmixed_homogeneous
+import wellmixed
 import numpy as np
 import argparse
 import matplotlib.pyplot as pp
@@ -6,7 +6,7 @@ import glob
 import os
 import matplotlib as mpl
 
-Species = wellmixed_homogeneous.Species
+Species = wellmixed.Species
 
 
 def prefs(species):
@@ -60,7 +60,6 @@ def analyse(stat_fname, dyns, animated=False):
 
         fig_dist.canvas.draw()
         print(sigs(species))
-        raw_input()
 
     ts = np.array(ts)
 
