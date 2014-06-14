@@ -30,7 +30,7 @@ def analyse(stat_fname, dyns, animated=False):
     traits = stat['traits']
     m = len(traits)
 
-    locs = range(m)
+    locs = list(range(m))
 
     if animated:
         pp.ion()
